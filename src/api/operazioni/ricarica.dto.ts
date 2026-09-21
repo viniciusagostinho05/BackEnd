@@ -1,10 +1,10 @@
-import { IsIn, IsString } from "class-validator";
+import { IsIn, Matches } from "class-validator";
 
 export class RicaricaDto {
-    @IsString()
+    @Matches(/^\+?\d{8,15}$/, { message: 'numeroTelefonico non valido' })
     numeroTelefonico: string;
 
-    @IsIn(['iliad', 'tim', 'vodafone', 'windtre', 'fstweb'])
+    @IsIn(['iliad', 'tim', 'vodafone', 'windtre', 'fastweb'])
     operatore: string;
 
     @IsIn([5, 10, 15, 20, 30])

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { isAuthenticated } from "../../utils/auth/authenticated.middleware";
-import { validate } from "../../utils/validation-middleware";
+import { isAuthenticated } from "../../lib/audit-log/utils/authenticated-middleware";
+import { validate } from "../../lib/validation.middleware";
 import { RicaricaDto } from "./ricarica.dto";
 import { BonificoDto } from "./bonifico.dto";
 import { ricarica } from "./ricarica.controller";

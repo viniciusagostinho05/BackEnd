@@ -1,5 +1,5 @@
-import { AuditLogModel } from "./utils/audit-log.model";
-import { AuditLog } from "./utils/audit-log.entity";
+import { AuditLogModel } from "./audit-log.model";
+import { AuditLog } from "./audit-log.entity";
 
 export class AuditLogService {
     async registra (dati: Omit<AuditLog, 'id' | 'data'>) {
