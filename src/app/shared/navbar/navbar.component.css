@@ -1,0 +1,50 @@
+.navbar {
+  width: 250px;
+  height: 100vh;
+  background: #1769aa;
+  color: white;
+  position: fixed;
+  left: 0;
+  top: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar-logo {
+  padding: 25px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.navbar-menu {
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  gap: 5px;
+}
+
+.navbar-menu a {
+  padding: 13px;
+  border-radius: 7px;
+  transition: 0.2s;
+}
+
+.navbar-menu a:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.navbar-bottom {
+  margin-top: auto;
+  padding: 15px;
+}
+
+.logout {
+  display: block;
+  padding: 13px;
+  background: rgba(0,0,0,0.15);
+  border-radius: 7px;
+}
+
+.logout:hover {
+  background: rgba(0,0,0,0.25);
+}

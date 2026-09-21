@@ -1,0 +1,110 @@
+.page {
+  min-height: 100vh;
+}
+
+.content {
+  margin-left: 250px;
+  padding: 40px;
+}
+
+.page-header {
+  margin-bottom: 30px;
+}
+
+.page-header h1 {
+  margin-bottom: 8px;
+}
+
+.page-header p {
+  color: #777;
+}
+
+.balance-card {
+  background: #1769aa;
+  color: white;
+  padding: 30px;
+  border-radius: 15px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 35px;
+}
+
+.balance-card span {
+  opacity: 0.8;
+}
+
+.balance-card h2 {
+  font-size: 35px;
+  margin-top: 8px;
+}
+
+.balance-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  font-size: 25px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.btn-secondary {
+  background: #1769aa;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 7px;
+}
+
+.table-card {
+  background: white;
+  border-radius: 12px;
+  overflow-x: auto;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+th {
+  background: #f8f9fa;
+}
+
+.entrata {
+  color: #159447;
+  font-weight: bold;
+}
+
+.uscita {
+  color: #d93636;
+  font-weight: bold;
+}
+
+.btn-detail {
+  border: none;
+  background: #1769aa;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 5px;
+}
