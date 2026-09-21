@@ -1,4 +1,4 @@
-import { User as AppUser } from '../../registrazione/registrazione.entity';
+import { ContoCorrente as AppUser } from '../../conto-corrente/conto-corrente.entity';
 import './local/local-strategy';
 import './jwt/jwt-strategy';
 

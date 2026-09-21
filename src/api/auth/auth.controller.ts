@@ -1,64 +1,98 @@
-import { NextFunction, Response, Request } from "express";
-import { TypedRequest } from "../utils/typed-request";
-import { UserExistsError } from "../../errors/user-exist.error";
-import { omit, pick } from "lodash";
-import registerSrv from '../registrazione/registrazione.service';
+import { NextFunction, Request, Response } from "express";
 import passport from "passport";
-import * as jwt from 'jsonwebtoken';
-import { ContoCorrenteDto } from "./auth.dto";
+import * as jwt from "jsonwebtoken";
 
-export const register = async (req: TypedRequest<ContoCorrenteDto>, res: Response, next: NextFunction) => {
-    try{
-        const contoCorrente = req.body;
-        const credentials = pick(req.body, 'email', 'password');
+import { TypedRequest } from "../utils/typed-request";
+import { RegisterDto } from "./auth.dto";
+import accessoService from "../accesso/accesso.service";
 
-        const newUser = await registerSrv.add(contoCorrente, credentials);
-        res.status(201).json(newUser);
-    }catch(err) {
-        if (err instanceof UserExistsError) {
-        res.status(400);
-        res.json({
-          error: err.name,
-          message: err.message
+
+export const register = async (
+    req: TypedRequest<RegisterDto>,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+
+        // TODO: adattare la registrazione al nuovo database
+
+        res.status(501).json({
+            message: "Registrazione non ancora implementata."
         });
-      } else {
+
+    } catch (err) {
         next(err);
-      }
     }
-}
+};
+
 
 export const login = async (
     req: Request,
     res: Response,
-    next: NextFunction) => {
-      try {
-        passport.authenticate('local',
-          { session: false },
-          (loginErr, user, info) => {
+    next: NextFunction
+) => {
 
-            if (loginErr) {
-              next(loginErr);
-              return;
+    try {
+
+        passport.authenticate(
+            "local",
+            { session: false },
+            async (loginErr: any, user: any, info: any) => {
+
+                if (loginErr) {
+                    return next(loginErr);
+                }
+
+                const ip =
+                    req.ip ||
+                    req.socket.remoteAddress ||
+                    "Sconosciuto";
+
+
+                if (!user) {
+
+                    await accessoService.registraAccesso(
+                        ip,
+                        false
+                    );
+
+                    return res.status(401).json({
+                        error: "LoginError",
+                        message: info?.message || "Email o password non validi."
+                    });
+                }
+
+
+                await accessoService.registraAccesso(
+                    ip,
+                    true
+                );
+
+
+                const token = jwt.sign(
+                    {
+                        ContoCorrenteID: user.ContoCorrenteID,
+                        Email: user.Email
+                    },
+                    "my_jwt_secret",
+                    {
+                        expiresIn: "7d"
+                    }
+                );
+
+
+                return res.json({
+                    user,
+                    token
+                });
+
             }
 
-            if (!user) {
-              res.status(400);
-              res.json({
-                error: 'LoginError',
-                message: info.message
-              });
-              return;
-            }
-
-            // generare token
-            const token = jwt.sign(user, 'my_jwt_secret', { expiresIn: '7 days' })
-            res.json({
-              user,
-              token
-            });
-          }
         )(req, res, next);
-      } catch(err) {
+
+
+    } catch (err) {
         next(err);
-      }
-  }
+    }
+
+};

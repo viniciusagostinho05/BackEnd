@@ -1,21 +1,31 @@
 import passport from "passport";
 import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
-import { UserModel } from "../../../registrazione/registrazione.model";
+import { ContoCorrenteModel } from "../../../conto-corrente/conto-corrente.model";
 
-passport.use(new JwtStrategy({
-    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-    secretOrKey: 'my_jwt_secret'
-  },
-  async (payload, done) => {
-    try {
-      const user = await UserModel.findById(payload.id);
-      if (user) {
-        done(null, user.toObject());
-      } else {
-        done(null, false, { message: 'invalid token' });
+passport.use(
+  new JwtStrategy(
+    {
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: "my_jwt_secret"
+    },
+    async (payload, done) => {
+      try {
+
+        const conto = await ContoCorrenteModel.findOne({
+          ContoCorrenteID: payload.ContoCorrenteID
+        });
+
+        if (!conto) {
+          return done(null, false, {
+            message: "Token non valido"
+          });
+        }
+
+        return done(null, conto);
+
+      } catch (err) {
+        return done(err);
       }
-    } catch(err) {
-      done(err);
     }
-  })
-)
+  )
+);

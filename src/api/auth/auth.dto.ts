@@ -1,34 +1,34 @@
-import { IsEmail, IsIBAN, IsMongoId, IsNumber, IsOptional, IsString, IsUrl, Matches } from "class-validator";
+import { IsEmail, IsString, Matches } from "class-validator";
 
-export class ContoCorrenteDto {
+export class RegisterDto {
 
-  @IsOptional()
-  @IsMongoId() contoCorrenteId: string;
+  @IsEmail()
+  Email: string;
 
-  @IsEmail() email: string;
-
-  @Matches( new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$'),
+  @Matches(
+    new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$'),
     {
-      message: 'password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number and 1 special character.'
+      message: 'La password deve contenere almeno 8 caratteri, una maiuscola, una minuscola, un numero e un simbolo.'
     }
-  )  password: string;
+  )
+  Password: string;
 
-  @IsString() nomeTitolare: string;
+  @IsString()
+  ConfermaPassword: string;
 
-  @IsString() cognomeTitolare: string;
+  @IsString()
+  NomeTitolare: string;
 
-  @IsOptional()
-  @IsIBAN() IBAN: string;
-
-  @IsOptional()
-  @IsString() dataApertura: string;
-
+  @IsString()
+  CognomeTitolare: string;
 }
 
 export class LoginDto {
+
   @IsEmail()
   email: string;
 
   @IsString()
   password: string;
+
 }
