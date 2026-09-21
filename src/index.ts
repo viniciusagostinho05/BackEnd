@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 
 mongoose.set('debug', true);
 mongoose.connect(
-  "mongodb+srv://pasettofrancesco12_db_user:qyu8CQs6cagYyBZM@cluster0.43inxww.mongodb.net/ProjectWork?appName=Cluster0"
+  "mongodb+srv://pasettofrancesco12_db_user:@cluster0.43inxww.mongodb.net/ProjectWork?appName=Cluster0"
 )
 .then(() => {
   createServer(app).listen(3000, () => {
