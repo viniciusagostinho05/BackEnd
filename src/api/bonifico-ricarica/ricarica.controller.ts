@@ -4,36 +4,35 @@ import { TypedRequest } from "../utils/typed-request";
 import { RicaricaDto } from "./ricarica.dto";
 import MovimentoContoCorrenteService from "../movimento-conto-corrente/movimento-conto-corrente.service";
 import auditLogSrv from "../utils/audit-log/audit-log.service";
-import { SaldoInsufficienteError } from "../../errors/SaldoInsufficienteError";
+import { SaldoInsufficienteError } from "../../errors/saldoInsufficienteError";
 
 export const ricarica = async (req: TypedRequest<RicaricaDto>, res: Response, next: NextFunction) => {
-  const ip = req.ip ?? 'unknown';
-  const contoId = (req as any).user.id;
-  
+  const contoCorrenteId = req.body.contoCorrenteId;
+  const ip = req.ip!;
   try {
     const { numeroTelefonico, operatore, taglio } = req.body;
 
     // 1. deve esserci saldo disponibile
-    const saldo = await MovimentoContoCorrenteService.getSaldo(contoId);
+    const saldo = await MovimentoContoCorrenteService.getSaldo(contoCorrenteId);
     if (Number(saldo) < taglio) {
       throw new SaldoInsufficienteError('Saldo insufficiente');
     }
 
     // 2. la categoria deve essere stata caricata nel db (nome ESATTO: 'Ricarica')
-    const categoria = await CategoriaMovimentoModel.findOne({ nomeCategoria: 'Ricarica' });
+    const categoria = await CategoriaMovimentoModel.findOne({ nomeCategoria: 'ricarica' });
     if (!categoria) {
       throw new Error("Categoria 'Ricarica' non presente nel database");
     }
 
     // 3. movimento di uscita
-    const movimento = await MovimentoContoCorrenteService.creaMovimentoRicarica( contoId, taglio, Number(saldo), categoria.CategoriaMoviementoId);
+    const movimento = await MovimentoContoCorrenteService.creaMovimentoRicarica( contoCorrenteId, taglio, Number(saldo), categoria.categoriaMovimentoId);
 
     await auditLogSrv.registra({
       tipoOperazione: 'ricarica',
       ip,
       esito: true,
-      contoCorrenteId: contoId,
-      dettaglio: `${taglio} € ${operatore} ${numeroTelefonico}`
+      contoCorrenteId: contoCorrenteId,
+      dettaglio: `${taglio}€ ${operatore} ${numeroTelefonico}`
     });
     res.status(201).json(movimento);
   } catch (err) {
@@ -41,7 +40,7 @@ export const ricarica = async (req: TypedRequest<RicaricaDto>, res: Response, ne
       tipoOperazione: 'ricarica',
       ip,
       esito: false,
-      contoCorrenteId: contoId,
+      contoCorrenteId: contoCorrenteId,
       dettaglio: err instanceof Error ? err.message : 'errore sconosciuto'
     });
     next(err);
