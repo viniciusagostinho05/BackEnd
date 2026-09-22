@@ -1,0 +1,44 @@
+import movimentoContoCorrenteService from "../movimento-conto-corrente/movimento-conto-corrente.service";
+import { ContoCorrente } from "./conto-corrente.entity";
+import { ContoCorrenteModel } from "./conto-corrente.model";
+
+export class ContoCorrenteService {
+
+    async findByEmail(email: string): Promise<ContoCorrente | null> {
+        return ContoCorrenteModel.findOne({
+            Email: email
+        });
+    }
+
+    async getHome(contoCorrenteID: string) {
+
+        const conto = await ContoCorrenteModel.findOne({
+            ContoCorrenteID: contoCorrenteID
+        });
+
+        if (!conto) {
+            return null;
+        }
+
+        const ultimiMovimenti =
+            await movimentoContoCorrenteService.getUltimiMovimenti(
+                contoCorrenteID
+            );
+
+        const saldo =
+            ultimiMovimenti.length > 0
+                ? ultimiMovimenti[0].Saldo
+                : 0;
+
+        return {
+            NomeTitolare: conto.NomeTitolare,
+            CognomeTitolare: conto.CognomeTitolare,
+            Saldo: saldo,
+            UltimiMovimenti: ultimiMovimenti
+        };
+
+    }
+
+}
+
+export default new ContoCorrenteService();
