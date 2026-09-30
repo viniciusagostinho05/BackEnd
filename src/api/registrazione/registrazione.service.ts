@@ -27,6 +27,10 @@ export class UserService {
 
     return newUser.toObject();
   }
+
+  async getuser() {
+    const currentUser = contoCorrenteModel.findOne();
+  }
 }
 
 export default new UserService();

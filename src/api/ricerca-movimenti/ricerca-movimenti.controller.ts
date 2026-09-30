@@ -1,16 +1,16 @@
 import { Response, NextFunction } from 'express';
 import { RicercaMovimentiQueryDto } from './ricerca-movimenti.dto';
 import { ricercaMovimentiSrv } from './ricerca-movimenti.service';
-import { TypedRequest } from '../utils/typed-request';
+import { AuthRequest } from '../auth/auth.middleware';
 
 
 export async function ricercaMovimentiHandler(
-  req: TypedRequest<unknown, RicercaMovimentiQueryDto>,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) {
   try {
-    const contoCorrenteId = (req.user as any).contoCorrenteId ?? (req.user as any).id;
+    const contoCorrenteId = req.user.contoCorrenteId;
 
     const result = await ricercaMovimentiSrv.cerca(
       contoCorrenteId,
@@ -18,7 +18,7 @@ export async function ricercaMovimentiHandler(
     );
 
     res.status(200).json(result);
-  } catch (err) {
+  } catch (err) { 
     next(err);
   }
 }

@@ -8,7 +8,7 @@ import { isAuthenticated } from "../utils/auth/authenticated.middleware";
 
 const router = Router();
 
-router.post('/ricarica', isAuthenticated, validate(RicaricaDto, 'body'), ricarica);
-router.post('/bonifico', isAuthenticated, validate(BonificoDto, 'body'), bonifico);
+router.post('/ricarica',  validate(RicaricaDto, 'body'), ricarica);
+router.post('/bonifico', validate(BonificoDto, 'body'), bonifico);
 
 export default router;

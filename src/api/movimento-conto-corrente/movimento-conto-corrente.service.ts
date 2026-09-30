@@ -1,177 +1,231 @@
-import { NextFunction } from "express";
 import { SaldoInsufficienteError } from "../../errors/saldoInsufficienteError";
 import { CategoriaMovimentoModel } from "../categorie-movimenti/categoria-movimento.model";
 import { contoCorrenteModel } from "../registrazione/registrazione.model";
-import { TypedRequest } from "../utils/typed-request";
-import { DepositoDto } from "./movimento-conto-corrente.dto";
 import { MovimentoContoCorrenteModel } from "./movimento-conto-corrente.model";
 
 export class MovimentoContoCorrenteService {
+  /**
+   * Restituisce gli ultimi 5 movimenti del conto.
+   */
+  async getUltimiMovimenti(contoCorrenteID: string) {
+    return MovimentoContoCorrenteModel.find({
+      ContoCorrenteID: contoCorrenteID,
+    })
+      .sort({ Data: -1 })
+      .limit(5);
+  }
 
-    async getUltimiMovimenti(contoCorrenteID: string) {
+  /**
+   * Restituisce un movimento appartenente a uno specifico conto.
+   */
+  async getMovimento(
+    movimentoID: string,
+    contoCorrenteID: string
+  ) {
+    return MovimentoContoCorrenteModel.findOne({
+      MovimentoID: movimentoID,
+      ContoCorrenteID: contoCorrenteID,
+    });
+  }
 
-        return MovimentoContoCorrenteModel.find({
-            ContoCorrenteID: contoCorrenteID
+  /**
+   * Restituisce il saldo dell'ultimo movimento.
+   * Se il conto non ha movimenti, il saldo iniziale è 0.
+   */
+  async getSaldo(contoCorrenteID: string): Promise<number> {
+    const ultimoMovimento =
+      await MovimentoContoCorrenteModel
+        .findOne({
+          ContoCorrenteID: contoCorrenteID,
         })
-            .sort({ Data: -1 })
-            .limit(5);
-
-    }
-
-    async getMovimento(
-        movimentoID: string,
-        contoCorrenteID: string
-    ) {
-
-        return MovimentoContoCorrenteModel.findOne({
-            MovimentoID: movimentoID,
-            ContoCorrenteID: contoCorrenteID
-        });
-
-    }
-
-    async getSaldo(contoCorrenteId: string) {
-        const ultimoMovimento = await MovimentoContoCorrenteModel
-        .findOne({ ContoCorrenteID: contoCorrenteId })
         .sort({ Data: -1 });
 
-        const saldoAttuale = ultimoMovimento?.Saldo;
+    return ultimoMovimento?.Saldo ?? 0;
+  }
+
+  /**
+   * Restituisce il conto associato a un movimento.
+   */
+  async getContoCorrente(movimentoID: string) {
+    return MovimentoContoCorrenteModel.findOne({
+      MovimentoID: movimentoID,
+    });
+  }
+
+  /**
+   * Crea una ricarica.
+   *
+   * La ricarica viene considerata un'uscita:
+   * il saldo diminuisce e Importo è negativo.
+   */
+  async creaMovimentoRicarica(
+    contoCorrenteID: string,
+    importo: number,
+    saldo: number,
+    categoriaMovimentoID: string
+  ) {
+    this.verificaImporto(importo);
+
+    if (importo > saldo) {
+      throw new SaldoInsufficienteError(
+        `Saldo insufficiente per una ricarica di ${importo}€`
+      );
     }
 
-    async getContoCorrente(movimentoId: string){
-        return MovimentoContoCorrenteModel.findOne({ MovimentoID: movimentoId});
-    }
+    const nuovoSaldo = saldo - importo;
 
-    async creaMovimentoRicarica(contoCorrenteId: string, taglio: number, saldo: number, categoriaId: string) {
-        if (taglio > saldo) {
-            throw new SaldoInsufficienteError(`${saldo} non sufficiente per una ricarica di ${taglio}`);
-        }
+    return MovimentoContoCorrenteModel.create({
+      ContoCorrenteID: contoCorrenteID,
+      Importo: -importo,
+      Saldo: nuovoSaldo,
+      CategoriaMovimentoID: categoriaMovimentoID,
+      DescrizioneEstesa: `Ricarica di ${importo}€`,
+    });
+  }
 
-        const nuovoSaldo = saldo - taglio;
-
-        const movimento = await MovimentoContoCorrenteModel.create({
-            ContoCorrenteID: contoCorrenteId,
-            Importo: taglio,
-            Saldo: nuovoSaldo,
-            CategoriaMovimentoID: categoriaId,
-            DescrizioneEstesa: `Ricarica di ${taglio}€`,
-        });
-
-        return movimento;
-    }
-
-    async uscita(contoCorrenteId: string, taglio: number, saldo: number, categoriaId: string) {
-        if (taglio > saldo) {
-            throw new SaldoInsufficienteError(`Saldo non sufficente per un bonifco di ${taglio}€`);
-        }
-
-        const nuovoSaldo = saldo - taglio;
-
-        const movimento = await MovimentoContoCorrenteModel.create({
-            ContoCorrenteID: contoCorrenteId,
-            Importo: taglio,
-            Saldo: nuovoSaldo,
-            CategoriaMovimentoID: categoriaId,
-            DescrizioneEstesa: `Bonifico in uscita di ${taglio}€`,
-        });
-
-        return movimento;
-    }
-
-    async entrata(IBAN: string, importo: number, categoriaId: string, saldo: number, ordinante?: string) {
-
-        const nuovoSaldo = saldo + importo;
-
-        const categoria = await CategoriaMovimentoModel.findOne({ CategoriaMovimentoId: categoriaId });
-        if (!categoria) {
-            throw new Error("Categoria non presente nel database");
-        }
-
-        const contoCorrente = await contoCorrenteModel.findOne({ IBAN });
-        if (!contoCorrente) {
-            throw new Error("Conto corrente non trovato");
-        }
-
-        const movimento = await MovimentoContoCorrenteModel.create({
-            ContoCorrenteID: contoCorrente.contoCorrenteId,
-            Importo: importo,
-            Saldo: nuovoSaldo,
-            DescrizioneEstesa: ordinante 
-            ? `Bonifico in entrata di ${importo}€ da ${ordinante}`
-            : `Bonifico in entrata di ${importo}€`,
-            CategoriaMovimentoID: categoriaId
-        });
-
-        return movimento;
-    }
-    
-    async deposito(
+  /**
+   * Crea un bonifico in uscita.
+   */
+  async uscita(
   contoCorrenteID: string,
   importo: number,
   categoriaMovimentoID: string,
   descrizione?: string
 ) {
-  if (importo <= 0) {
-    throw new Error(
-      'L’importo del deposito deve essere maggiore di zero'
-    );
-  }
+  this.verificaImporto(importo);
 
   const saldoAttuale =
     await this.getSaldo(contoCorrenteID);
 
-  const nuovoSaldo =
-    Number(saldoAttuale) + importo;
+  if (importo > saldoAttuale) {
+    throw new SaldoInsufficienteError(
+      `Saldo insufficiente per un bonifico di ${importo}€`
+    );
+  }
 
-  const movimento =
-    await MovimentoContoCorrenteModel.create({
+  const nuovoSaldo = saldoAttuale - importo;
+
+  return MovimentoContoCorrenteModel.create({
+    ContoCorrenteID: contoCorrenteID,
+    Importo: -importo,
+    Saldo: nuovoSaldo,
+    CategoriaMovimentoID: categoriaMovimentoID,
+    DescrizioneEstesa:
+      descrizione ??
+      `Bonifico in uscita di ${importo}€`,
+  });
+}
+
+  /**
+   * Crea un bonifico in entrata usando l'IBAN del destinatario.
+   */
+  async entrata(
+  IBAN: string,
+  importo: number,
+  categoriaMovimentoID: string,
+  ordinante?: string,
+  descrizione?: string
+) {
+  this.verificaImporto(importo);
+
+  const contoCorrente =
+    await contoCorrenteModel.findOne({ IBAN });
+
+  if (!contoCorrente) {
+    throw new Error("Conto corrente non trovato");
+  }
+
+  const contoCorrenteID =
+    contoCorrente.contoCorrenteId;
+
+  const saldoAttuale =
+    await this.getSaldo(contoCorrenteID);
+
+  const nuovoSaldo = saldoAttuale + importo;
+
+  const descrizioneMovimento =
+    descrizione ??
+    (ordinante
+      ? `Bonifico in entrata di ${importo}€ da ${ordinante}`
+      : `Bonifico in entrata di ${importo}€`);
+
+  return MovimentoContoCorrenteModel.create({
+    ContoCorrenteID: contoCorrenteID,
+    Importo: importo,
+    Saldo: nuovoSaldo,
+    CategoriaMovimentoID: categoriaMovimentoID,
+    DescrizioneEstesa: descrizioneMovimento,
+  });
+}
+
+  /**
+   * Crea un deposito.
+   */
+  async deposito(
+    contoCorrenteID: string,
+    importo: number,
+    categoriaMovimentoID: string,
+    descrizione?: string
+  ) {
+    this.verificaImporto(importo);
+
+    const saldoAttuale =
+      await this.getSaldo(contoCorrenteID);
+
+    const nuovoSaldo = saldoAttuale + importo;
+
+    return MovimentoContoCorrenteModel.create({
       ContoCorrenteID: contoCorrenteID,
       Importo: importo,
       Saldo: nuovoSaldo,
-      CategoriaMovimentoID:
-        categoriaMovimentoID,
+      CategoriaMovimentoID: categoriaMovimentoID,
       DescrizioneEstesa:
-        descrizione ??
-        `Deposito di ${importo}€`,
+        descrizione ?? `Deposito di ${importo}€`,
     });
-
-  return movimento;
-}
-
-async ritiro(contoCorrenteID: string, importo: number, categoriaMovimentoID: string, descrizione?: string) {
-  if (importo <= 0) {
-    throw new Error(
-      'L’importo del ritiro deve essere maggiore di zero'
-    );
   }
 
-  const saldoAttuale =
-    await this.getSaldo(contoCorrenteID);
+  /**
+   * Crea un prelievo.
+   */
+  async ritiro(
+    contoCorrenteID: string,
+    importo: number,
+    categoriaMovimentoID: string,
+    descrizione?: string
+  ) {
+    this.verificaImporto(importo);
 
-  if (importo > Number(saldoAttuale)) {
-    throw new SaldoInsufficienteError(
-      `Saldo insufficiente per un ritiro di ${importo}€`
-    );
-  }
+    const saldoAttuale =
+      await this.getSaldo(contoCorrenteID);
 
-  const nuovoSaldo =
-    Number(saldoAttuale) - importo;
+    if (importo > saldoAttuale) {
+      throw new SaldoInsufficienteError(
+        `Saldo insufficiente per un ritiro di ${importo}€`
+      );
+    }
 
-  const movimento =
-    await MovimentoContoCorrenteModel.create({
+    const nuovoSaldo = saldoAttuale - importo;
+
+    return MovimentoContoCorrenteModel.create({
       ContoCorrenteID: contoCorrenteID,
       Importo: -importo,
       Saldo: nuovoSaldo,
-      CategoriaMovimentoID:
-        categoriaMovimentoID,
+      CategoriaMovimentoID: categoriaMovimentoID,
       DescrizioneEstesa:
-        descrizione ??
-        `Ritiro di ${importo}€`,
+        descrizione ?? `Ritiro di ${importo}€`,
     });
+  }
 
-  return movimento;
-}
-
+  /**
+   * Controlla che l'importo sia valido.
+   */
+  private verificaImporto(importo: number): void {
+    if (!Number.isFinite(importo) || importo <= 0) {
+      throw new Error(
+        "L'importo deve essere un numero maggiore di zero"
+      );
+    }
+  }
 }
 
 export default new MovimentoContoCorrenteService();

@@ -4,40 +4,40 @@ import { ContoCorrenteModel } from "./conto-corrente.model";
 
 export class ContoCorrenteService {
 
-    async findByEmail(email: string): Promise<ContoCorrente | null> {
+    async findUser(contoCorrenteID: string): Promise<ContoCorrente | null> {
         return ContoCorrenteModel.findOne({
-            Email: email
+            contoCorrenteId: contoCorrenteID
         });
     }
 
-    async getHome(contoCorrenteID: string) {
+    // async getHome(contoCorrenteID: string) {
 
-        const conto = await ContoCorrenteModel.findOne({
-            ContoCorrenteID: contoCorrenteID
-        });
+    //     const conto = await ContoCorrenteModel.findOne({
+    //         contoCorrenteID: contoCorrenteID
+    //     });
 
-        if (!conto) {
-            return null;
-        }
+    //     if (!conto) {
+    //         return null;
+    //     }
 
-        const ultimiMovimenti =
-            await movimentoContoCorrenteService.getUltimiMovimenti(
-                contoCorrenteID
-            );
+    //     const ultimiMovimenti =
+    //         await movimentoContoCorrenteService.getUltimiMovimenti(
+    //             contoCorrenteID
+    //         );
 
-        const saldo =
-            ultimiMovimenti.length > 0
-                ? ultimiMovimenti[0].Saldo
-                : 0;
+    //     const saldo =
+    //         ultimiMovimenti.length > 0
+    //             ? ultimiMovimenti[0].Saldo
+    //             : 0;
 
-        return {
-            NomeTitolare: conto.NomeTitolare,
-            CognomeTitolare: conto.CognomeTitolare,
-            Saldo: saldo,
-            UltimiMovimenti: ultimiMovimenti
-        };
+    //     return {
+    //         NomeTitolare: conto.NomeTitolare,
+    //         CognomeTitolare: conto.CognomeTitolare,
+    //         Saldo: saldo,
+    //         UltimiMovimenti: ultimiMovimenti
+    //     };
 
-    }
+    // }
 
 }
 

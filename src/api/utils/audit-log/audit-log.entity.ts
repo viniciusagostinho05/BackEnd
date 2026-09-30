@@ -1,9 +1,8 @@
 export interface AuditLog {
-    id: string;
-    contoCorrenteId?: string;
-    tipoOperazione: 'login' | 'ricarica' | 'bonifico' | 'cambio-password';
-    ip: string;
-    data: Date;
-    esito: boolean;
-    dettaglio?: string;
+  id?: string;
+  tipoOperazione: string;
+  ip: string;
+  esito: boolean;
+  contoCorrenteId?: string | null;
+  data?: Date;
 }

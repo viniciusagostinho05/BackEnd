@@ -1,15 +1,11 @@
 import { Router } from "express";
-import { isAuthenticated } from "../utils/auth/authenticated.middleware";
-import * as ContoCorrenteController from "./conto-corrente.controller";
+import { validate } from "../utils/validation-middleware";
+import { getUser } from "./conto-corrente.controller";
 
 const router = Router();
 
-router.get(
-    "/home",
-    isAuthenticated,
-    async (req, res, next) => {
-        await ContoCorrenteController.home(req, res, next);
-    }
-);
+// router.get("/home", home);
+
+router.get("/user", getUser);
 
 export default router;

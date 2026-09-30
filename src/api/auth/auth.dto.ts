@@ -2,8 +2,6 @@ import { IsEmail, IsIBAN, IsMongoId, IsNumber, IsOptional, IsString, IsUrl, Matc
 
 export class ContoCorrenteDto {
 
-  @IsOptional()
-  @IsMongoId() contoCorrenteId: string;
 
   @IsEmail() email: string;
 

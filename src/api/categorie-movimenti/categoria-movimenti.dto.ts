@@ -10,3 +10,8 @@ export class CreaCategoriaMovimentoDto {
   @IsIn(['Entrata', 'Uscita'])
   tipologia: 'Entrata' | 'Uscita';
 }
+
+export class CercaCategoriaMovimentoDto {
+  @IsString()
+  catrgoriaId: string;
+}

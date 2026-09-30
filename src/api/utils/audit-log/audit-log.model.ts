@@ -1,22 +1,43 @@
-import { model, Schema } from "mongoose";
+import { Schema, model } from "mongoose";
 import { AuditLog } from "./audit-log.entity";
 
-const auditLogSchema = new Schema <AuditLog> ({
-    contoCorrenteId: { type: Schema.Types.ObjectId, ref: 'ContoCorrente' },
-    tipoOperazione: { type: String, required: true },
-    ip: String,
-    data: { type: Date, default: Date.now },
-    esito: Boolean,
-    dettaglio: String
-});
+const auditLogSchema = new Schema<AuditLog>(
+  {
+    tipoOperazione: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-auditLogSchema.set('toJSON', {
-    virtuals: true,
-    transform: (_, ret: any) => { 
-        delete ret._id; 
-        delete ret.__v;
-        return ret;
-    }
-});
+    ip: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-export const AuditLogModel = model <AuditLog> ('AuditLog', auditLogSchema);
+    esito: {
+      type: Boolean,
+      required: true,
+    },
+
+    contoCorrenteId: {
+      type: Schema.Types.ObjectId,
+      ref: "ContoCorrente",
+      required: false,
+      default: null,
+    },
+
+    data: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    versionKey: false,
+  }
+);
+
+export const AuditLogModel = model<AuditLog>(
+  "AuditLog",
+  auditLogSchema
+);

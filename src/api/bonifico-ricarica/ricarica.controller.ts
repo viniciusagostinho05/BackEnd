@@ -7,13 +7,13 @@ import auditLogSrv from "../utils/audit-log/audit-log.service";
 import { SaldoInsufficienteError } from "../../errors/saldoInsufficienteError";
 
 export const ricarica = async (req: TypedRequest<RicaricaDto>, res: Response, next: NextFunction) => {
-  const contoCorrenteId = req.body.contoCorrenteId;
+  const contoCorrenteId = req.user?.contoCorrenteId;
   const ip = req.ip!;
   try {
     const { numeroTelefonico, operatore, taglio } = req.body;
 
     // 1. deve esserci saldo disponibile
-    const saldo = await MovimentoContoCorrenteService.getSaldo(contoCorrenteId);
+    const saldo = await MovimentoContoCorrenteService.getSaldo(contoCorrenteId!);
     if (Number(saldo) < taglio) {
       throw new SaldoInsufficienteError('Saldo insufficiente');
     }
@@ -25,14 +25,13 @@ export const ricarica = async (req: TypedRequest<RicaricaDto>, res: Response, ne
     }
 
     // 3. movimento di uscita
-    const movimento = await MovimentoContoCorrenteService.creaMovimentoRicarica( contoCorrenteId, taglio, Number(saldo), categoria.categoriaMovimentoId);
+    const movimento = await MovimentoContoCorrenteService.creaMovimentoRicarica( contoCorrenteId!, taglio, Number(saldo), categoria.categoriaMovimentoId);
 
     await auditLogSrv.registra({
       tipoOperazione: 'ricarica',
       ip,
       esito: true,
-      contoCorrenteId: contoCorrenteId,
-      dettaglio: `${taglio}€ ${operatore} ${numeroTelefonico}`
+      contoCorrenteId: contoCorrenteId
     });
     res.status(201).json(movimento);
   } catch (err) {
@@ -40,8 +39,7 @@ export const ricarica = async (req: TypedRequest<RicaricaDto>, res: Response, ne
       tipoOperazione: 'ricarica',
       ip,
       esito: false,
-      contoCorrenteId: contoCorrenteId,
-      dettaglio: err instanceof Error ? err.message : 'errore sconosciuto'
+      contoCorrenteId: contoCorrenteId
     });
     next(err);
   }

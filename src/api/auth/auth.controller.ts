@@ -95,10 +95,10 @@ export const login = async (
 
                 const token = jwt.sign(
                     {
-                        contoCorrenteID: user.contoCorrenteID,
+                        contoCorrenteId: user.contoCorrenteId,
                         email: user.email
                     },
-                    "my_jwt_secret",
+                    "mia_chiave_segreta_molto_lunga_e_complessa_12345",
                     {
                         expiresIn: "7d"
                     }

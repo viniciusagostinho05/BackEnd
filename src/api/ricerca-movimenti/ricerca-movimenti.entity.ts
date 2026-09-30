@@ -1,7 +1,7 @@
 export interface Movimento {
   _id: string;
   contoCorrenteId: string;
-  data: Date;
+  data: string;
   importo: number;
   saldo: number;
   categoriaMovimentoId: string;
@@ -9,7 +9,7 @@ export interface Movimento {
 }
 
 export interface MovimentoRicercaItem {
-  data: Date;
+  data: string;
   importo: number;
   nomeCategoria: string;
 }

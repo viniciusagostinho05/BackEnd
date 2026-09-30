@@ -1,6 +1,6 @@
 import { CategoriaMovimentoModel } from './categoria-movimento.model';
 import { CategoriaMovimento } from './categoria-movimento.entity';
-import { CreaCategoriaMovimentoDto } from './categoria-movimenti.dto';
+import { CercaCategoriaMovimentoDto, CreaCategoriaMovimentoDto } from './categoria-movimenti.dto';
 
 export class CategoriaMovimentoService {
   async elenco(): Promise<CategoriaMovimento[]> {
@@ -37,6 +37,13 @@ export class CategoriaMovimentoService {
       tipologia:
         categoria.tipologia,
     };
+  }
+
+  async cercaNomeCat() {
+    const categoria =
+      await CategoriaMovimentoModel.find();
+
+    return categoria;
   }
 }
 

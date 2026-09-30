@@ -1,12 +1,8 @@
-import { Router } from 'express';
-import passport from 'passport';
-import { RicercaMovimentiQueryDto } from './ricerca-movimenti.dto';
+import { RequestHandler, Router } from 'express';
 import { ricercaMovimentiHandler } from './ricerca-movimenti.controller';
-import { validate } from '../utils/validation-middleware';
+import { authMiddleware } from '../auth/auth.middleware';
 
 
 export const ricercaMovimentiRouter = Router();
 
-ricercaMovimentiRouter.get( '/', passport.authenticate('jwt', { session: false }), validate(RicercaMovimentiQueryDto, 'query'),
-  ricercaMovimentiHandler
-);
+ricercaMovimentiRouter.get( '/', authMiddleware as RequestHandler, ricercaMovimentiHandler as RequestHandler );

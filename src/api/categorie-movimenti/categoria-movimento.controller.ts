@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { categoriaMovimentoSrv } from './categoria-movimento.service';
 import { TypedRequest } from '../utils/typed-request';
-import { CreaCategoriaMovimentoDto } from './categoria-movimenti.dto';
+import { CercaCategoriaMovimentoDto, CreaCategoriaMovimentoDto } from './categoria-movimenti.dto';
 
 export async function categoriaMovimentoHandler(
   req: TypedRequest<unknown, unknown, unknown>,
@@ -15,6 +15,20 @@ export async function categoriaMovimentoHandler(
     next(err);
   }
 }
+
+export async function cercaCategoriaMovimentoHandler(
+  req: TypedRequest<CercaCategoriaMovimentoDto>,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const nomeCategoria = await categoriaMovimentoSrv.cercaNomeCat();
+    res.status(200).json(nomeCategoria);
+  } catch (err) {
+    next(err);
+  }
+}
+
 
 export async function creaCategoriaMovimentoHandler(
   req: TypedRequest<CreaCategoriaMovimentoDto>,

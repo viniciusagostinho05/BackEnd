@@ -21,12 +21,13 @@ export const dettaglioMovimento = async (
             );
 
         if (!movimento) {
-            return res.status(404).json({
+             res.status(404).json({
                 message: "Movimento non trovato."
             });
+            return;
         }
-
-        return res.json(movimento);
+        res.json(movimento);
+        return;
 
     } catch (err) {
         next(err);
@@ -35,14 +36,13 @@ export const dettaglioMovimento = async (
 
 export const deposito = async ( req: TypedRequest<DepositoDto>, res: Response, next: NextFunction ): Promise<void> => {
   try {
-    const { contoCorrenteId, importo, categoriaId, descrizione } = req.body;
-
+    const { importo,  descrizione } = req.body;
+    const contoCorrenteID = req.user?.contoCorrenteId;
     const nuovoDeposito =
       await movimentoContoCorrenteService.deposito(
-        contoCorrenteId,
+        contoCorrenteID!,
         importo,
-        categoriaId,
-        descrizione
+        descrizione!
       );
 
     res.status(201).json({
@@ -66,12 +66,14 @@ export const ritiro = async ( req: Request,res: Response, next: NextFunction ) =
             );
 
         if (!movimento) {
-            return res.status(404).json({
+            res.status(404).json({
                 message: "Movimento non trovato."
             });
+            return; 
         }
 
-        return res.json(movimento);
+        res.json(movimento);
+        return;
 
     } catch (err) {
         next(err);

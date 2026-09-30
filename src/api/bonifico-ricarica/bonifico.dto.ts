@@ -11,4 +11,8 @@ export class BonificoDto {
     @IsNumber({ maxDecimalPlaces: 2 })
     @IsPositive()
     importo: number;
+
+    @IsString()
+    @IsNotEmpty()
+    descrizione: string
 }
