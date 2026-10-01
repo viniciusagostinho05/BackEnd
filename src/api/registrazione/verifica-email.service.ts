@@ -24,14 +24,14 @@ export class VerificaEmailService {
 
       
    await transporter.sendMail({
-  from: `"La mia applicazione" <${process.env.SMTP_FROM}>`,
+  from: `"Banca delle Canarie" <${process.env.SMTP_FROM}>`,
   to: email,
   subject: "Conferma il tuo indirizzo email",
 
   text: `
 Ciao!
 
-Grazie per esserti registrato a La mia applicazione.
+Grazie per esserti registrato alla Banca delle Canarie.
 
 Per attivare il tuo account, apri il seguente link:
 

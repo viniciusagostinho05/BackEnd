@@ -5,42 +5,49 @@ import { IBAN } from "@dellacagna/iban";
 const userSchema = new Schema<ContoCorrente>({
   contoCorrenteId: {
     type: String,
-    default: () => new Types.ObjectId().toString()
+    default: () => new Types.ObjectId().toString(),
   },
   nomeTitolare: String,
   cognomeTitolare: String,
   IBAN: {
     type: String,
-    default: () => IBAN.random('IT')
+    default: () => IBAN.random("IT"),
   },
   dataApertura: {
     type: String,
-    default: () => new Date().toISOString()
+    default: () => new Date().toISOString(),
   },
   email: String,
   password: String,
   isVerified: {
     type: Boolean,
     default: false,
+  },
+});
+
+// Pre-save hook: rimuove tutti gli spazi dall'IBAN prima di salvare
+userSchema.pre("save", function (next) {
+  if (this.IBAN) {
+    this.IBAN = this.IBAN.replace(/\s+/g, "");
   }
 });
 
-userSchema.set('toJSON', {
+userSchema.set("toJSON", {
   virtuals: true,
   transform: (_, ret: any) => {
     delete ret._id;
     delete ret.__v;
     return ret;
-  }
+  },
 });
 
-userSchema.set('toObject', {
+userSchema.set("toObject", {
   virtuals: true,
   transform: (_, ret: any) => {
     delete ret._id;
     delete ret.__v;
     return ret;
-  }
+  },
 });
 
-export const contoCorrenteModel = model<ContoCorrente>('ContoCorrente', userSchema);
+export const contoCorrenteModel = model<ContoCorrente>("ContoCorrente", userSchema);
