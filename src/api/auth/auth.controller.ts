@@ -118,65 +118,30 @@ export const login = async (
 
 };
 
-export async function verifyEmail(
+export async function verificaEmail(
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> {
+) {
   try {
-    const { token } = req.query;
+    const token = String(req.query.token || '');
 
-    if (!token || typeof token !== 'string') {
-      res.status(400).json({
-        message: 'Token mancante o non valido',
-      });
-
-      return;
+    if (!token) {
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/email-verificata?success=0`
+      );
     }
 
-    const message =
-      await verificaEmailService.VerificaEmail( token );
+    await verificaEmailService.VerificaEmail(token);
 
-    res.status(200).json({
-      message,
-    });
+    return res.redirect(
+      `${process.env.FRONTEND_URL}/email-verificata?success=1`
+    );
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message ===
-        'Token non valido o scaduto'
-    ) {
-      res.status(400).json({
-        message: error.message,
-      });
+    console.error('Errore verifica email:', error);
 
-      return;
-    }
-
-    if (
-      error instanceof Error &&
-      error.message ===
-        'Conto corrente non trovato'
-    ) {
-      res.status(404).json({
-        message: error.message,
-      });
-
-      return;
-    }
-
-    if (
-      error instanceof Error &&
-      error.message ===
-        'Categoria apertura conto non trovata'
-    ) {
-      res.status(500).json({
-        message: error.message,
-      });
-
-      return;
-    }
-
-    next(error);
+    return res.redirect(
+      `${process.env.FRONTEND_URL}/email-verificata?success=0`
+    );
   }
 }

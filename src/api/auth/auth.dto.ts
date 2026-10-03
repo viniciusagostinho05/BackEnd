@@ -7,7 +7,7 @@ export class ContoCorrenteDto {
 
   @Matches( new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$'),
     {
-      message: 'password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number and 1 special character.'
+      message: 'La password deve contenere almeno: una lettera maiuscola, una lettera minuscola, un numero, un carattere speciale.'
     }
   )  password: string;
 

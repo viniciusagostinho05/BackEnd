@@ -28,36 +28,25 @@ export const bonifico = async (
     }
 
     if (!contoCorrenteMittenteID) {
-      throw new Error(
-        "Conto corrente del mittente non trovato"
-      );
+      throw new Error("Conto corrente del mittente non trovato");
     }
 
-    const {
-      ibanDestinatario,
-      importo,
-      descrizione,
-    } = req.body;
+    const { ibanDestinatario, importo, descrizione } = req.body;
 
     if (!ibanDestinatario?.trim()) {
-      throw new Error(
-        "L'IBAN del destinatario è obbligatorio"
-      );
+      throw new Error("L'IBAN del destinatario è obbligatorio");
     }
 
     if (!Number.isFinite(importo) || importo <= 0) {
-      throw new Error(
-        "L'importo deve essere un numero maggiore di zero"
-      );
+      throw new Error("L'importo deve essere un numero maggiore di zero");
     }
 
     /*
      * 1. Cerco il conto destinatario tramite IBAN
      */
-    const destinatario =
-      await ContoCorrenteModel.findOne({
-        IBAN: ibanDestinatario
-      });
+    const destinatario = await ContoCorrenteModel.findOne({
+      IBAN: ibanDestinatario,
+    });
 
     if (!destinatario) {
       throw new Error("IBAN destinatario non trovato");
@@ -66,32 +55,34 @@ export const bonifico = async (
     const contoCorrenteDestinatarioID = destinatario.contoCorrenteId;
 
     if (!contoCorrenteDestinatarioID) {
-      throw new Error(
-        "ID del conto destinatario non trovato"
-      );
+      throw new Error("ID del conto destinatario non trovato");
     }
 
-    if (
-      contoCorrenteDestinatarioID ===
-      contoCorrenteMittenteID
-    ) {
-      throw new Error(
-        "Non puoi fare un bonifico verso il tuo stesso conto"
-      );
+    if (contoCorrenteDestinatarioID === contoCorrenteMittenteID) {
+      throw new Error("Non puoi fare un bonifico verso il tuo stesso conto");
     }
 
     /*
-     * 2. Recupero automaticamente le categorie
+     * 2. Recupero il conto del mittente (serve il suo IBAN)
      */
-    const categoriaUscita =
-      await CategoriaMovimentoModel.findOne({
-        nomeCategoria: "bonifico_uscita",
-      });
+    const mittente = await ContoCorrenteModel.findOne({
+      contoCorrenteId: contoCorrenteMittenteID,
+    });
 
-    const categoriaEntrata =
-      await CategoriaMovimentoModel.findOne({
-        nomeCategoria: "bonifico_entrata",
-      });
+    if (!mittente) {
+      throw new Error("Conto del mittente non trovato");
+    }
+
+    /*
+     * 3. Recupero le categorie
+     */
+    const categoriaUscita = await CategoriaMovimentoModel.findOne({
+      nomeCategoria: "bonifico_uscita",
+    });
+
+    const categoriaEntrata = await CategoriaMovimentoModel.findOne({
+      nomeCategoria: "bonifico_entrata",
+    });
 
     if (!categoriaUscita || !categoriaEntrata) {
       throw new Error(
@@ -100,66 +91,43 @@ export const bonifico = async (
       );
     }
 
-    /*
-     * 3. Recupero gli ID delle categorie
-     */
-    const categoriaUscitaID =
-      categoriaUscita.categoriaMovimentoId;
-
-    const categoriaEntrataID =
-      categoriaEntrata.categoriaMovimentoId;
+    const categoriaUscitaID = categoriaUscita.categoriaMovimentoId;
+    const categoriaEntrataID = categoriaEntrata.categoriaMovimentoId;
 
     if (!categoriaUscitaID || !categoriaEntrataID) {
-      throw new Error(
-        "ID delle categorie di bonifico non validi"
-      );
+      throw new Error("ID delle categorie di bonifico non validi");
     }
 
     /*
-     * 4. Recupero il saldo attuale del mittente
+     * 4. Controllo il saldo del mittente
      */
     const saldoMittente =
-      await MovimentoContoCorrenteService.getSaldo(
-        contoCorrenteMittenteID
-      );
+      await MovimentoContoCorrenteService.getSaldo(contoCorrenteMittenteID);
 
     if (saldoMittente < importo) {
-      throw new SaldoInsufficienteError(
-        "Saldo insufficiente"
-      );
+      throw new SaldoInsufficienteError("Saldo insufficiente");
     }
 
     /*
-     * 5. Ricavo il nome dell'ordinante, se presente
+     * 5. Creo il movimento in uscita
      */
-    // const nomeOrdinante = [
-    //   utente.nome,
-    //   utente.nomeTitolare,
-    //   utente.cognome,
-    //   utente.cognomeTitolare,
-    // ]
-    //   .filter(Boolean)
-    //   .join(" ")
-    //   .trim();
+    const movimentoUscita = await MovimentoContoCorrenteService.uscita(
+      contoCorrenteMittenteID,
+      importo,
+      categoriaUscitaID,
+      descrizione
+    );
 
     /*
-     * 6. Creo il movimento in uscita
-     */
-    const movimentoUscita =
-      await MovimentoContoCorrenteService.uscita(
-        contoCorrenteMittenteID,
-        importo,
-        categoriaUscitaID,
-        descrizione
-      );
-
-    /*
-     * 7. Creo il movimento in entrata
+     * 6. Creo il movimento in entrata:
+     *    4° argomento = ordinante (IBAN del mittente)
+     *    5° argomento = descrizione scritta dall'utente
      */
     await MovimentoContoCorrenteService.entrata(
       destinatario.IBAN,
       importo,
       categoriaEntrataID,
+      mittente.IBAN,
       descrizione
     );
 
@@ -167,21 +135,20 @@ export const bonifico = async (
       tipoOperazione: "bonifico",
       ip,
       esito: true,
-      contoCorrenteId: contoCorrenteMittenteID
+      contoCorrenteId: contoCorrenteMittenteID,
     });
 
-     res.status(201).json({
+    res.status(201).json({
       message: "Bonifico eseguito correttamente",
-      movimento: movimentoUscita
+      movimento: movimentoUscita,
     });
-      return;
-
+    return;
   } catch (err) {
     await auditLogService.registra({
       tipoOperazione: "bonifico",
       ip,
       esito: false,
-      contoCorrenteId: contoCorrenteMittenteID
+      contoCorrenteId: contoCorrenteMittenteID,
     });
 
     return next(err);

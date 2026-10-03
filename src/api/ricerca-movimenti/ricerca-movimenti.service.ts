@@ -9,8 +9,8 @@ import { MovimentoRicercaResult } from './ricerca-movimenti.entity';
 const LIMITE_DEFAULT = 10;
 
 interface CategoriaLean {
-  CategoriaMovimentoID: string;
-  NomeCategoria: string;
+  categoriaMovimentoId: string;
+  nomeCategoria: string;
 }
 
 export class RicercaMovimentiService {
@@ -84,17 +84,17 @@ export class RicercaMovimentiService {
     ];
 
     const categorie = await CategoriaMovimentoModel.find({
-      CategoriaMovimentoID: { $in: categoriaIds },
-    })
-      .select('CategoriaMovimentoID NomeCategoria')
-      .lean<CategoriaLean[]>();
+  categoriaMovimentoId: { $in: categoriaIds },
+})
+  .select('categoriaMovimentoId nomeCategoria')
+  .lean<CategoriaLean[]>();
 
-    const categoriePerId = new Map(
-      categorie.map((categoria) => [
-        categoria.CategoriaMovimentoID,
-        categoria.NomeCategoria,
-      ])
-    );
+const categoriePerId = new Map(
+  categorie.map((categoria) => [
+    categoria.categoriaMovimentoId,
+    categoria.nomeCategoria,
+  ])
+);
 
     const movimenti = movimentiDocs.map((m) => ({
       data: m.Data,

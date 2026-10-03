@@ -87,76 +87,79 @@ export class MovimentoContoCorrenteService {
    * Crea un bonifico in uscita.
    */
   async uscita(
-  contoCorrenteID: string,
-  importo: number,
-  categoriaMovimentoID: string,
-  descrizione?: string
-) {
-  this.verificaImporto(importo);
+    contoCorrenteID: string,
+    importo: number,
+    categoriaMovimentoID: string,
+    descrizione?: string
+  ) {
+    this.verificaImporto(importo);
 
-  const saldoAttuale =
-    await this.getSaldo(contoCorrenteID);
+    const saldoAttuale =
+      await this.getSaldo(contoCorrenteID);
 
-  if (importo > saldoAttuale) {
-    throw new SaldoInsufficienteError(
-      `Saldo insufficiente per un bonifico di ${importo}€`
-    );
+    if (importo > saldoAttuale) {
+      throw new SaldoInsufficienteError(
+        `Saldo insufficiente per un bonifico di ${importo}€`
+      );
+    }
+
+    const nuovoSaldo = saldoAttuale - importo;
+
+    return MovimentoContoCorrenteModel.create({
+      ContoCorrenteID: contoCorrenteID,
+      Importo: -importo,
+      Saldo: nuovoSaldo,
+      CategoriaMovimentoID: categoriaMovimentoID,
+      DescrizioneEstesa:
+        descrizione ??
+        `Bonifico in uscita di ${importo}€`,
+    });
   }
-
-  const nuovoSaldo = saldoAttuale - importo;
-
-  return MovimentoContoCorrenteModel.create({
-    ContoCorrenteID: contoCorrenteID,
-    Importo: -importo,
-    Saldo: nuovoSaldo,
-    CategoriaMovimentoID: categoriaMovimentoID,
-    DescrizioneEstesa:
-      descrizione ??
-      `Bonifico in uscita di ${importo}€`,
-  });
-}
 
   /**
    * Crea un bonifico in entrata usando l'IBAN del destinatario.
+   * Se è presente l'ordinante (IBAN del mittente) lo mostra nella
+   * descrizione, seguito dalla descrizione scritta dall'utente.
    */
   async entrata(
-  IBAN: string,
-  importo: number,
-  categoriaMovimentoID: string,
-  ordinante?: string,
-  descrizione?: string
-) {
-  this.verificaImporto(importo);
+    IBAN: string,
+    importo: number,
+    categoriaMovimentoID: string,
+    ordinante?: string,
+    descrizione?: string
+  ) {
+    this.verificaImporto(importo);
 
-  const contoCorrente =
-    await contoCorrenteModel.findOne({ IBAN });
+    const contoCorrente =
+      await contoCorrenteModel.findOne({ IBAN });
 
-  if (!contoCorrente) {
-    throw new Error("Conto corrente non trovato");
+    if (!contoCorrente) {
+      throw new Error("Conto corrente non trovato");
+    }
+
+    const contoCorrenteID =
+      contoCorrente.contoCorrenteId;
+
+    const saldoAttuale =
+      await this.getSaldo(contoCorrenteID);
+
+    const nuovoSaldo = saldoAttuale + importo;
+
+    const descrizioneUtente = descrizione?.trim();
+
+    const descrizioneMovimento = ordinante
+      ? `Bonifico in entrata di ${importo}€ da ${ordinante}` +
+        (descrizioneUtente ? ` - ${descrizioneUtente}` : "")
+      : descrizioneUtente || `Bonifico in entrata di ${importo}€`;
+
+    return MovimentoContoCorrenteModel.create({
+      ContoCorrenteID: contoCorrenteID,
+      Importo: importo,
+      Saldo: nuovoSaldo,
+      CategoriaMovimentoID: categoriaMovimentoID,
+      DescrizioneEstesa: descrizioneMovimento,
+    });
   }
-
-  const contoCorrenteID =
-    contoCorrente.contoCorrenteId;
-
-  const saldoAttuale =
-    await this.getSaldo(contoCorrenteID);
-
-  const nuovoSaldo = saldoAttuale + importo;
-
-  const descrizioneMovimento =
-    descrizione ??
-    (ordinante
-      ? `Bonifico in entrata di ${importo}€ da ${ordinante}`
-      : `Bonifico in entrata di ${importo}€`);
-
-  return MovimentoContoCorrenteModel.create({
-    ContoCorrenteID: contoCorrenteID,
-    Importo: importo,
-    Saldo: nuovoSaldo,
-    CategoriaMovimentoID: categoriaMovimentoID,
-    DescrizioneEstesa: descrizioneMovimento,
-  });
-}
 
   /**
    * Crea un deposito.
